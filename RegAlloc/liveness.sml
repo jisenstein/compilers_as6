@@ -3,14 +3,14 @@
 signature LIVENESS =
 sig
 
-  datatype igraph = 
+  datatype igraph =
       IGRAPH of {graph : Graph.graph,
                  tnode : Graph.node Temp.Table.table,
                  gtemp : Temp.temp Graph.Table.table,
                  moves : (Graph.node * Graph.node) list}
 
   (*
-   *  val interferenceGraph : 
+   *  val interferenceGraph :
    *        Flow.flowgraph -> igraph * (Flow.Graph.node -> Temp.temp list)
    *
    *  val show : outstream * igraph -> unit
@@ -18,10 +18,10 @@ sig
 
 end (* signature LIVENESS *)
 
-structure Liveness : LIVENESS = 
+structure Liveness : LIVENESS =
 struct
 
-  datatype igraph = 
+  datatype igraph =
       IGRAPH of {graph : Graph.graph,
                  tnode : Graph.node Temp.Table.table,
                  gtemp : Temp.temp Graph.Table.table,
@@ -29,13 +29,21 @@ struct
 
   (* To construct the interference graph, it is convenient to
      construct a liveness map at each node in the FlowGraph first.
-     For each node in the flowgraph, i.e., for each assembly 
-     instruction, we want to easily look up the set S of live 
+     For each node in the flowgraph, i.e., for each assembly
+     instruction, we want to easily look up the set S of live
      temporaries. 
    *)
 
   type liveSet = unit Temp.Table.table * Temp.temp list
   type livenessMap = liveSet Flow.Graph.Table.table
+
+  fun computeLiveness(fgraph as Flow.FGRAPH{control=c, def=defs, use=uses, ismove=i},
+                      node::rest,
+                      old_in,
+                      old_out) =
+    let
+    in
+    end
 
 
 
@@ -49,6 +57,6 @@ struct
 
 end (* structure Liveness *)
 
-     
 
-                 
+
+
