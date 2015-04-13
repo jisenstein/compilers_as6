@@ -1,0 +1,24 @@
+Josh Isenstein
+CPSC 421 RegAlloc Group
+
+<i>
+Completed makegraph.sml
+Need to complete liveness.sml and regalloc.sml
+
+<ii>
+For makegraph, instrs2graph can be invoked by calling MakeGraph.instrs2graph.(instrs)
+where instrs is a list of assembly instructions. Furthermore, users can print graphs
+by calling MakeGraph.test_generic(instrs) where instrs is a list of assembly
+instructions. test_generic will print the successors and predecessors of the nodes in
+the graph, and the defs/uses of the flowgraph, created from the instructions. 
+
+<iii>
+I have assumed that the set of assembly instructions won't contain any MOVE
+instructions. I have also structured my program in a way that assumes that a label
+instruction occurs before the instruction that it labels.
+
+<iv>
+TBD
+
+<v>
+Have not changed any other files
