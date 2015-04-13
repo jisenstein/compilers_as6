@@ -15,6 +15,7 @@ sig
    *
    *  val show : outstream * igraph -> unit
    *)
+  val removeDuplicates : int list -> int list
 
 end (* signature LIVENESS *)
 
@@ -45,22 +46,61 @@ struct
     (
     let
       val node = List.nth(nodes, index);
-      val old_out = #3List.nth(db, index);
+      val entry = List.nth(db, index);
     
       val use = getOpt(Graph.Table.look(uses, node), []);
       val def = getOpt(Graph.Table.look(defs, node), []);
 
-      val diff = subLists(old_out, def);
+      val diff = subLists(entry, def);
 
-      val new_in = combine(use, diff);
-      val new_out = combineMult(new_in, Graph.succ(node));
+      val new_in = removeDuplicates(use @ diff);
+      val new_out = removeDuplicates(extractIns(Graph.succ(node), nodes, db));
+      val new_db = updateDB(db, new_in, new_out, index, 0);
     in
-      computeLiveness(fgraph, nodes, index-1, db)
+      computeLiveness(fgraph, nodes, index-1, new_db)
     end
     )
-   else (#2List.nth(db, index), #3List.nth(db, index))
-     
+   else 
+        (db)
 
+  and subLists((n, ins, outs): int*int list * int list, lst2: int list) =
+    List.filter (fn x => List.all (fn y => x <> y) lst2) outs
+
+
+  and updateDB(elt::db, ins, outs, index, curr) =
+    if index = curr then (curr, ins, outs)::db
+    else updateDB(db, ins, outs, index, curr+1)
+  | updateDB(nil, ins, outs, index, curr) = []
+
+  and extractIns(succ::succs, nodes, db) =
+    let
+      val index = findIndex(succ, nodes, 0);
+      val (n, ins, outs) = List.nth(db, index);
+    in
+      ins @ extractIns(succs, nodes, db)
+    end
+  | extractIns(nil, nodes, db) = []
+
+  and findIndex(succ, node::nodes, i) =
+      if Graph.nodename(succ) = Graph.nodename(node) then i
+      else findIndex(succ, nodes, i+1)
+     | findIndex(succ, nil, i) =
+       (print("Error: can't find node with name " ^ Graph.nodename(succ)); ~1)
+    
+
+  (* adapted from 
+  * http://stackoverflow.com/questions/21077272/remove-duplicates-from-a-list-in-sml 
+   *)
+  and removeDuplicates [] = []
+    | removeDuplicates (lst as elt::rest: int list) =
+      let fun remove (elt, []) = []
+            | remove (elt, l as y::ys: int list) = if elt = y then
+                                       remove(elt, ys)
+                                       else y::remove(elt, ys)
+      in                                      
+        elt::removeDuplicates(remove(elt,rest))
+      end
+ 
 
   fun initializeDataStructure(length, index) = 
     if length = 0 then nil else
