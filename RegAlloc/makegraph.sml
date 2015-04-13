@@ -3,6 +3,7 @@
 signature MAKEGRAPH = 
 sig
   val instrs2graph : Assem.instr list -> Flow.flowgraph * Flow.Graph.node list
+  val instrs : Assem.instr list
   val test : unit -> unit
   val test_generic : Assem.instr list -> unit
 end
