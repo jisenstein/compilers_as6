@@ -2,8 +2,9 @@
 
 signature MAKEGRAPH = 
 sig
- val instrs2graph : Assem.instr list -> Flow.flowgraph * Flow.Graph.node list
+  val instrs2graph : Assem.instr list -> Flow.flowgraph * Flow.Graph.node list
   val test : unit -> unit
+  val test_generic : Assem.instr list : unit -> unit
 end
 
 structure MakeGraph : MAKEGRAPH =
@@ -120,11 +121,62 @@ struct
                                       printLabels(rest, n + 1))
   | printLabels(nil, n) = ()
 
+  fun printSuccPred(node::rest) =
+    (
+        print(Graph.nodename(node) ^ ", ");
+        printSuccPred(rest)
+    )
+  | printSuccPred(nil) = print("\n")
+
+  fun printNodes(node::rest) =
+    (
+        print("Nodename: " ^ Graph.nodename(node) ^ "\n");
+        print("succ: ");
+        printSuccPred(Graph.succ(node));
+        print("pred: ");
+        printSuccPred(Graph.pred(node));
+        print("\n");
+        printNodes(rest)
+    )
+  | printNodes(nil) = nil
+
+  fun printGraph(fg as Flow.FGRAPH{control=c, def=d, use=u, ismove=i}, nodes) =
+    (
+      print("def table: \n");
+      printDefUse(d, nodes);
+      print("use table: \n");
+      printDefUse(u, nodes)
+    )
+  and printDefUse(table, node::rest) =
+    (
+      print("Nodename: " ^ Graph.nodename(node) ^ ": ");
+      print(printTemps(getOpt(Graph.Table.look(table, node), [~1])));
+      printDefUse(table, rest)
+    )     
+  | printDefUse(table, nil) = nil
+
+  and printTemps(temp::rest) = (Int.toString(temp) ^ "," ^ printTemps(rest))
+    | printTemps(nil) = "\n"
+
   fun test() = 
     let
-      val labels = makeLabels(instrs, 0);
+      val (fg, nodes) = instrs2graph(instrs);
     in
-      printLabels(labels, 0)
+      (
+      printGraph(fg, nodes);
+      printNodes(nodes); ()
+      )
     end
+  
+  fun test_generic(instructions) = 
+    let
+      val (fg, nodes) = instrs2graph(instructions);
+    in
+      (
+      printGraph(fg, nodes);
+      printNodes(nodes); ()
+      )
+    end
+
 
 end
