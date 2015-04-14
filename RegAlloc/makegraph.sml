@@ -165,7 +165,8 @@ struct
     in
       (
       printGraph(fg, nodes);
-      printNodes(nodes); ()
+      printNodes(nodes);
+      ()
       )
     end
   
