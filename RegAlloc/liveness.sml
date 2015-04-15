@@ -9,12 +9,12 @@ sig
                  gtemp : Temp.temp Graph.Table.table,
                  moves : (Graph.node * Graph.node) list}
 
-  (*
-   *  val interferenceGraph :
-   *        Flow.flowgraph -> igraph * (Flow.Graph.node -> Temp.temp list)
-   *
-   *  val show : outstream * igraph -> unit
-   *)
+  
+     (*val interferenceGraph :
+           Flow.flowgraph -> igraph * (Flow.Graph.node -> Temp.temp list)*)
+   
+   (* val show : outstream * igraph -> unit *)
+  
   val removeDuplicates : int list -> int list
   val test : unit -> unit
 
@@ -39,7 +39,98 @@ struct
   type liveSet = unit Temp.Table.table * Temp.temp list
   type livenessMap = liveSet Flow.Graph.Table.table
 
-  fun runAlgo(fgraph, nodes, old_db) =
+
+  fun interferenceGraph(fgraph as Flow.FGRAPH{control, use, def, ismove}) =
+    let
+      val nodes = Graph.nodes(control);
+      val empty_db = initializeDataStructure(List.length(nodes), nodes);
+      val livenessInfo = runAlgo(fgraph, nodes, empty_db);
+
+      val temps = removeDuplicates(allTemps(nodes, use, def));
+
+      val (igraph, tnode, gtemp) = initIGraph(temps,
+                                              Graph.newGraph(),
+                                              Temp.Table.empty,
+                                              Graph.Table.empty);
+      val edge = makeEdges(nodes, def, livenessInfo, tnode);
+
+      fun table_mapping (node : Flow.Graph.node) =
+        let 
+          fun findIndex(key : Graph.node, curr::rest : Graph.node list, i) =
+            if Graph.nodename(key) = Graph.nodename(curr) then i
+            else findIndex(key, rest, i+1)
+          |  findIndex(key, nil, i) = (print("ERROR"); ~1)
+        in
+          let
+            val index = findIndex(node, nodes, 0);
+            val (name, ins, outs) = List.nth(livenessInfo, index);
+          in
+            outs
+          end
+        end
+
+    in
+      (IGRAPH{graph=igraph, tnode=tnode, gtemp=gtemp, moves=nil}, table_mapping)
+      (*igraph*)
+    end
+
+  and findLivenessPerNode((name, ins, outs)::rest, node) =
+    if Graph.nodename(node) = Graph.nodename(name) then 
+      outs
+    else findLivenessPerNode(rest, node)
+  | findLivenessPerNode(nil, node) = []
+  and makeEdges(node::rest, def,
+               (n, ins, outs)::lrest, tnode) =
+    let
+      val current_defs = getOpt(Graph.Table.look(def, node), []);
+    in
+      (makeEdgesHelper(current_defs, tnode, outs);
+       makeEdges(rest, def, lrest, tnode))
+    end
+ | makeEdges(nil, def, _, tnode) = ()
+ | makeEdges(_, def, nil, tnode) = ()
+      
+  and makeEdgesHelper(def::nil, tnode, outs) = 
+     executeEdges(def, tnode, outs)
+    | makeEdgesHelper(nil, tnode, outs) = ()
+
+    | makeEdgesHelper(def::rest, tnode, outs) = ()
+      
+ and executeEdges(def, tnode, out::rest) =
+   let
+     val from = getOpt(Temp.Table.look(tnode, def), Graph.newNode(Graph.newGraph()));
+     val to = getOpt(Temp.Table.look(tnode, out), Graph.newNode(Graph.newGraph()));
+   in
+     (
+       Graph.mk_edge({from=from, to=to});
+       executeEdges(def, tnode, rest)
+     )
+   end
+ | executeEdges(tnode, def_name, nil) = ()
+    
+  and initIGraph(temp::rest, igraph, tnode, gtemp) =
+    let
+      val node = Graph.newNode(igraph);
+      val new_tnode = Temp.Table.enter(tnode, temp, node);
+      val new_gtemp = Graph.Table.enter(gtemp, node, temp);
+    in
+      initIGraph(rest, igraph, new_tnode, new_gtemp)
+    end
+   | initIGraph(nil, igraph, tnode, gtemp) = (igraph, tnode, gtemp)
+
+  and allTemps(node::rest, use, def) =
+    let
+      val useList = getOpt(Graph.Table.look(use, node), []);
+      val defList = getOpt(Graph.Table.look(def, node), []);
+      val comb = useList @ defList;
+    in
+      comb @ allTemps(rest, use, def)
+    end
+
+   | allTemps(nil, use, def) = []
+
+
+  and runAlgo(fgraph, nodes, old_db) =
     let
       val new_db = computeLiveness(fgraph, nodes, List.length(nodes)-1, old_db)
     in
@@ -134,7 +225,7 @@ struct
 
  
 
-  fun initializeDataStructure(length, node::rest) = 
+  and initializeDataStructure(length, node::rest) = 
     if length = 0 then nil else
     (Graph.nodename(node), [], [])::initializeDataStructure(length-1, rest)
     | initializeDataStructure(_, _) = []
@@ -144,20 +235,23 @@ struct
      construct the interference graph, just scan each node in
      the Flow Graph, add interference edges properly ... 
    *)
+
+ fun printTemps(temp::rest) = (Int.toString(temp) ^ "," ^ printTemps(rest))
+    | printTemps(nil) = "\n"
+
  
  fun test() =
    let
      val(fg, nodes) = MakeGraph.instrs2graph(MakeGraph.instrs);
-     val empty_db = initializeDataStructure(List.length(nodes), nodes);
-     val final_db = runAlgo(fg, nodes, empty_db);
+     val (igraph, function) = interferenceGraph(fg);
+     (*val empty_db = initializeDataStructure(List.length(nodes), nodes);
+     val final_db = runAlgo(fg, nodes, empty_db);*)
    in
-     (printDB(final_db); ())
+     ()
+     (* (MakeGraph.printNodes(Graph.nodes(result)); ()) *)
+     (*(printDB(final_db); ()) *)
    end
 
 
 
 end (* structure Liveness *)
-
-
-
-

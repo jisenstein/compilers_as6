@@ -563,12 +563,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 136 - ((23 * winheight(0) + 24) / 48)
+let s:l = 168 - ((33 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-136
-normal! 029|
+168
+normal! 07|
 tabedit liveness.sml
 set splitbelow splitright
 set nosplitbelow
@@ -687,12 +687,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 37 - ((12 * winheight(0) + 24) / 48)
+let s:l = 28 - ((0 * winheight(0) + 24) / 48)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-37
-normal! 0
+28
+normal! 018|
 tabedit ../CodeGen/assem.sml
 set splitbelow splitright
 set nosplitbelow

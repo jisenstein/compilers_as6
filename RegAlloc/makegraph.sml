@@ -6,6 +6,7 @@ sig
   val instrs : Assem.instr list
   val test : unit -> unit
   val test_generic : Assem.instr list -> unit
+  val printNodes : Graph.node list -> unit
 end
 
 structure MakeGraph : MAKEGRAPH =
@@ -132,14 +133,16 @@ struct
   fun printNodes(node::rest) =
     (
         print("Nodename: " ^ Graph.nodename(node) ^ "\n");
-        print("succ: ");
+        printSuccPred(Graph.adj(node));
+        print("\n");
+     (*   print("succ: ");
         printSuccPred(Graph.succ(node));
         print("pred: ");
         printSuccPred(Graph.pred(node));
-        print("\n");
+        print("\n"); *)
         printNodes(rest)
     )
-  | printNodes(nil) = nil
+  | printNodes(nil) = ()
 
   fun printGraph(fg as Flow.FGRAPH{control=c, def=d, use=u, ismove=i}, nodes) =
     (
