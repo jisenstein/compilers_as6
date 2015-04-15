@@ -206,6 +206,7 @@ struct
       in                                      
         elt::removeDuplicates(remove(elt,rest))
       end
+
   and printDB((n, ins, outs)::rest) =
    (
     print(n ^ ": ");
